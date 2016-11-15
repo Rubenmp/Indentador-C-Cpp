@@ -1,0 +1,245 @@
+\documentclass[11pt,spanish]{article} % Idioma
+\usepackage{babel}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp, verbatim} % \begin{comment}
+\usepackage[utf8]{inputenc} % Permite acentos
+
+\usepackage{wrapfig} % Imagenes %\graphicspath{ {./imagenes/} }
+\usepackage[left=2.75cm,top=2.5cm,right=2cm,bottom=2.5cm]{geometry} % Márgenes
+\usepackage{amssymb, amsmath, amscd, amsfonts, amsthm, mathrsfs } % Símbolos matemáticos
+\usepackage{cancel} % Cancelar expresiones
+\usepackage{multirow, multicol, tabularx, booktabs, longtable} % Tablas
+\usepackage{fancyhdr, fncychap} % Encabezados
+\usepackage{algpseudocode, algorithmicx, algorithm} % Pseudo-código	
+\usepackage{bbding} % Símbolos
+\usepackage{enumitem} % Enumerados a), b), c)... usando \begin{enumerate}[label=\alph*)]
+\usepackage{graphicx, xcolor, color, pstricks} % Gráficos --TikZ-- 
+% http://www.texample.net/tikz/examples/
+\usepackage[hidelinks]{hyperref}  % Enlaces
+\usepackage{verbatim} % Comentarios largos \begin{comment}
+\usepackage{rotating} % \begin{rotate}{30}
+\usepackage[all]{xy} % Diagramas
+\usepackage{xparse} % Entornos
+\usepackage{listings}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour},   
+	commentstyle=\color{codegreen},
+	keywordstyle=\color{magenta},
+	numberstyle=\tiny\color{codegray},
+	stringstyle=\color{codepurple},
+	basicstyle=\footnotesize,
+	breakatwhitespace=false,         
+	breaklines=true,                 
+	captionpos=b,                    
+	keepspaces=true,                 
+	numbers=left,                    
+	numbersep=5pt,                  
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=2
+}
+\lstset{style=mystyle}
+
+
+% Comandos
+\newcommand{\docdate}{}
+\newcommand{\subject}{}
+\newcommand{\docauthor}{Rubén Morales Pérez}
+\newcommand{\docemail}{srmorales@correo.ugr.es}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+
+
+\linespread{1.1}                  % Espacio entre líneas.
+\setlength\parindent{0pt}         % Indentación para párrafo.
+
+\title{Prácticas Modelos de Computación\\Indentador código C/C++}
+\author{Rubén Morales Pérez}
+\date{\today}
+
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%					 Inicio del documento
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+\begin{document}
+
+\maketitle
+\setlength\parindent{0pt} % Quitamos la sangría
+
+\section{Introducción}
+A pesar de que en los inicios de los cursos de programación se explica la importancia de tabular el código que se escribe no todo el mundo lo hace. 
+Todos somos conscientes de lo difícil que es leer código cuando no está bien tabulado.
+Poner en la misma línea un $if$ y su acción o poner la llave $\{$ en una línea diferente del último paréntesis, por estética o ahorro de espacios son algunos de estos malos vicios que una persona coge al escribir código.
+
+Poner demasiadas líneas seguidas sin líneas en blanco puede resultar tan molesto como leer un texto largo en un solo párrafo o leer una frase sin ningún signo de puntuación
+Para los más puristas incluso no tener el mismo criterio para poner espacios (poner espacio detrás de una coma, no ponerlo, ponerlo a veces antes) puede resultar molesto cuando quieres leer código limpio y bien hecho.
+
+Lo ideal sería que todo el código estuviese bien tabulado, para facilitar esta tarea se ha creado un tabulador automático para código C/C++. Dicho programa está hecho con LEX, para construir un analizador léxico con el que obtener nuestro objetivo.
+
+\section{Declaraciones}
+Incluiremos algunas bibliotecas necesarias para el programa
+\lstinputlisting[language=C++, firstline=5, lastline=8]{./indentador.lex}
+
+\subsection{Variables}
+\lstinputlisting[language=C++, firstline=12, lastline=19]{./indentador.lex}
+
+\begin{itemize}
+	\item $numIndex$ es el número de tabulaciones necesarias en cada instante.
+	\item $esBloque$ nos dice si estamos dentro de un paréntesis o no, esto es útil ya que después de un $;$ siempre irá un $  \backslash n$, salvo que esté dentro de un $for$ o de una cadena de texto.
+	\item $inicioLinea$ nos dice si estamos en el inicio de una línea, es necesario para saber si tenemos que meter $numIndex$ $\backslash t$ o no.
+	\item $insertadaLinea$ nos dice si se ha impreso justo antes un $\backslash n$, es necesario ya que pueden darse situaciones en las que sea necesario insertar un $\backslash n$ manual, con esta variable nos aseguramos de no insertar varios saltos de línea redundantes.
+	\item $lineaProcesada$, tras un $\{$ que no sea texto siempre irá un salto de línea y un aumento de $numIndex$, salvo que ya hayamos encontrado una estructura de control y aumentado $numIndex$ anteriormente.
+	\item $anteriorLlave$ nos dice si el último carácter es una llave $\}$. Esto nos sirve para poner un salto de línea extra en estructuras de control largas pero que si aparecen varias llaves $\}$ seguidas no tengan líneas en blanco en medio.
+	\item $salidaFichero$ nos indica si la salida por pantalla es por la salida estándar o no.
+\end{itemize}
+
+\subsection{Funciones}
+\begin{lstlisting}
+	void escribir();
+\end{lstlisting}
+Nos permite imprimir el texto asociado a la expresión regular reconocida teniendo en cuenta si es necesario tabular o no.
+
+
+\vspace{0.5cm}
+\begin{lstlisting}
+	void escribirCadena(char *cadena, int n);
+\end{lstlisting}
+Imprime los $n$ primeros caracteres de la cadena indicada sin tener en cuenta tabulaciones.
+
+\vspace{0.5cm}
+\begin{lstlisting}
+	void bloque();
+\end{lstlisting}
+Nos ayuda a identificar si la cadena deseada está entre paréntesis, necesario para no imprimir un salto de línea tras el $;$ de un bucle $for$.
+
+\vspace{0.5cm}
+\begin{lstlisting}
+	int ultimoParentesisDerecho();
+\end{lstlisting}
+Nos devuelve el último paréntesis derecho que aparece en $yytext$, esto nos ayuda a separar una estructura de control de la sentencia cuando no se separan por un $\backslash n$, ejemplo: 
+\begin{lstlisting}
+	if(obsesionPorElEspacio) noTabularCorrectamente();
+\end{lstlisting}
+
+
+\vspace{0.5cm}
+\begin{lstlisting}
+	bool hayComentario(int *lineaComent);
+\end{lstlisting}
+Devuelve si hay algún comentario en $yytext$ y devuelve en $lineaComent$ el inicio de dicho comentario.\\
+
+
+\vspace{0.5cm}
+\begin{lstlisting}
+	void depurar(char * cadena);
+\end{lstlisting}
+Sentencia que nos indica la expresión regular por la que ha sido reconocido yytext.
+
+
+
+
+\subsection{Expresiones regulares}
+\subsubsection{Texto}
+\lstinputlisting[firstline=119, lastline=123]{./indentador.lex}
+Expresiones rutinarias, quizá la más interesante sea $cadenaTexto$, ya que es necesario incluir la opción de incluir unas comillas dentro de una cadena de texto.
+
+\vspace{0.4cm}
+\subsubsection{Estructuras de control}
+\lstinputlisting[firstline=127, lastline=134]{./indentador.lex}
+$tipomas$ y $tipomenos$ son las que se utilizan en el programa, identifican los momentos en los que hay que aumentar o disminuir el número de tabulaciones.
+El resto son palabras reservadas que nos ayudan con la tabulación.
+
+\vspace{0.4cm}
+\subsubsection{Comentarios}
+\lstinputlisting[firstline=138, lastline=141]{./indentador.lex}
+$comentarioLargo$ es una expresión regular interesante.
+
+\vspace{0.4cm}
+\subsubsection{Separación con espacios}
+\lstinputlisting[firstline=145, lastline=155]{./indentador.lex}
+Las primeras son expresiones auxiliares, tienen comportamiento asociado los $5$ últimos.
+$espacioDoble$ y $espacioVacio$ identifica las sentencias que tienen obligatoriamente un espacio a cada lado o las que no deben tener ninguno y se traga los espacios a los lados para tener un formato homogéneo.
+Anteriormente también se creó $espacioIzquierda$ para intentar poner un espacio justo antes del paréntesis izquierdo en una estructura de control o llamando a una función, pero se optó por otra solución.
+
+$llaveFea$ identifica la sintaxis del tipo
+\begin{lstlisting}
+	if(llaveEnOtraLinea) // Comentario opcional (o comentario largo)
+	{
+		sentencias...
+	}
+\end{lstlisting}
+que será transformada en
+\begin{lstlisting}
+	if(llaveEnOtraLinea){ // Comentario opcional (o comentario largo)
+		sentencias...
+	}
+\end{lstlisting}
+
+\vspace{0.2cm}
+$puntoComa$ crea un formato homogéneo para los comentarios al lado del código, también asegura el salto de línea después de un ';', para evitar varias sentencias en la misma línea.
+
+\vspace{0.2cm}
+$controlSinComa$ nos identifica las sentencias de control de una línea que no requieren ir entre llaves.
+Para no tener que volver a pasar $yylex()$ en el mismo programa invocamos dos esclavos que nos harán trabajo por separado.
+
+\vspace{0.5cm}
+\section{Reglas}
+\begin{itemize}
+	\item \{comentario\} Deja el comentario igual asegurando el salto de línea al final.
+	\item \{cadenaTexto\} Imprime tal cuál la cadena de texto teniendo en cuenta las restricciones de tabulación.
+	\item $(\backslash \ )+$ Deja un código más homogeneo, aunque hay situaciones en las que puede preferirse quitar esta regla.
+	\item $(\backslash t)+$ Igual que el anterior
+	\item $\{espacio\}*,\{espacio\}*$ Deja una coma y un espacio inmediatamente después.
+	\item \{puntoComa\} Deja un $;$ y un espacio, tabulación o salto de línea en función de en qué posición del código se encuentre dicho carácter. Por ejemplo, si está en un bucle $for$ solamente deja un espacio para que sea más legible.
+	\item \{espacioDoble\} Deja coma a izquierda y derecha del carácter identificado.
+	\item \{espacioVacio\} Elimina espacios y tabulaciones alrededor del carácter deseado.
+	\item \{llaveFea\} Arregla la situación descrita anteriormente.
+	\item \{controlSinLinea\} Modifica líneas donde falten saltos de línea a mitad, normalmente usadas por ahorro de espacio.
+	\item \{tipomas\} Suma una tabulación a las necesarias para garantizar la indentación del código.
+	\item \{tipomenoss\} Resta una tabulación.
+	\item $\backslash n$ Imprime un salto de línea salvo que haya sido ya impreso como consecuencia de otra regla.
+	\item .	Imprime el carácter respetando tabulaciones.
+\end{itemize}
+
+
+
+\section{Procedimientos}
+\lstinputlisting[language=C, firstline=381, lastline=401]{./indentador.lex}
+
+
+%\section{Ejemplos}
+
+
+
+
+
+\section{Sugerencia para LEX}
+La visualización de las expresiones regulares no es nada intuitiva, cuando escribes alguna con cierta complicación sin ningún espacio pierdes agilidad al leerla.
+Una forma de solucionar esto podría ser tener un carácter especial para el espacio (parece que puede haber fallos si no se escapan los espacios, esto lo solucionaría) y que te dejase separar las expresiones regulares con los espacios deseados.
+
+Ejemplo:
+\begin{lstlisting}
+cadenaTexto            (\"([^(\")]|"\"")+\")|{caracter}
+\end{lstlisting}
+podría pensarse más rápido si LEX permitiese hacer
+\begin{lstlisting}
+cadenaTexto            (\"  ( [^(\")] | "\"" )+  \")    |    {caracter} 
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+%					 Bibliografía
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
+
+\end{document}
