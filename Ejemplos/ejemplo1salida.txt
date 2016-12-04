@@ -1,0 +1,6 @@
+if (control){
+	 x = x + y;
+}
+for (int i = 0; i<n; ++i){
+	 x += i;
+}

@@ -1,5 +1,4 @@
 
-
   /*----- Secci�n de Declaraciones --------------*/
 %{
 #include <stdio.h>
@@ -53,8 +52,10 @@ void escribir(){
 void escribirCadena(char *cadena, int n){
     if (salidaFichero)
       fwrite(cadena, n, 1, yyout);
-    else
-      printf("%s", cadena);
+    else{
+      for (int i=0; i<n; ++i)
+        printf("%c", cadena[i]);
+    }
 }
 
 
@@ -152,10 +153,9 @@ espacioVacio           ({espacio}*{tipoVacio}{espacio}*)
 
 llaveFea               ({blanco}*\)({comentario}|{blanco})*\{)
 puntoComa              ({espacio}*;{espacio}*{comentarioLinea}?)
-controlSinLinea        ({tipomas}{espacio}({parentesis}|{parentesisFor}){sentencia})
-
-
+controlSinLinea        ({control}{espacio}({parentesis}|{parentesisFor})?{sentencia})
 %%
+
   /*----- Sección de Reglas ----------------*/
 
 {comentario}           {depurar("Comentario");
@@ -179,19 +179,25 @@ controlSinLinea        ({tipomas}{espacio}({parentesis}|{parentesisFor}){sentenc
                        }
 
 (\ )+                  {depurar("Espacios");
-                        escribirCadena(" ", 1); // Conseguimos homogeneidad
+                        if (!inicioLinea){
+                          escribirCadena(" ", 1); // Conseguimos homogeneidad
 
-                        // Consecuencias
-                        insertadaLinea = false;
-                        anteriorLlave  = false;
+                          // Consecuencias
+                          insertadaLinea = false;
+                          anteriorLlave  = false;
+                          inicioLinea = false;
+                        }
                        }
 
 (\t)+                  {depurar("Tabuladores");
-                        escribirCadena("\t", 1); // Homogeneidad
+                        if (!inicioLinea){
+                          escribirCadena("\t", 1); // Conseguimos homogeneidad
 
-                        // Consecuencias
-                        insertadaLinea = false;
-                        anteriorLlave  = false;
+                          // Consecuencias
+                          insertadaLinea = false;
+                          anteriorLlave  = false;
+                          inicioLinea = false;
+                        }
                        }
 
 {espacio}*,{espacio}*  {depurar("Coma");
@@ -241,8 +247,10 @@ controlSinLinea        ({tipomas}{espacio}({parentesis}|{parentesisFor}){sentenc
                         escribirCadena(" ", 1);
                         for (i=0; i<yyleng; ++i){
                           if (yytext[i] != ' ' && yytext[i] != '\t'){
-                            *c = yytext[i];
+                          //printf("\n-%c-\n", yytext[i]);fflush(stdout);
+
                             escribirCadena(yytext+i, 1);
+
                           }
                         }
                         escribirCadena(" ", 1);
@@ -252,20 +260,18 @@ controlSinLinea        ({tipomas}{espacio}({parentesis}|{parentesisFor}){sentenc
                        }
 
 {espacioVacio}         {depurar("Espacio vacío");
-                        char *c;
                         int antes = esBloque, despues, i;
+
                         bloque();     // Comprueba si hay nuevos paréntesis
                         despues = esBloque;
-
                         if ( ((despues - antes) == 1) && (despues == 1) ) // Si es el primer (
                           escribirCadena(" ", 1);
 
                         for (int i=0; i<yyleng; ++i){
-                          if (yytext[i] != ' ' && yytext[i] != '\t'){
-                            *c = yytext[i];
+                          if (yytext[i] != ' ' && yytext[i] != '\t')
                             escribirCadena(yytext+i, 1);
-                          }
                         }
+
                        }
 
 {llaveFea}             {depurar("Llave fea");
@@ -294,38 +300,6 @@ controlSinLinea        ({tipomas}{espacio}({parentesis}|{parentesisFor}){sentenc
                         anteriorLlave  = false; // Usamos este bool solo para llaves '}'
                        }
 
-{controlSinLinea}      {depurar("Control sin línea"); // Ejemplo: if (condicion) noIntro();
-                        int parentesis = ultimoParentesisDerecho(), i,j;
-                        char c;
-
-                        // Estructura de control
-                        char fila1[yyleng], fila2[yyleng];
-
-                        for (i=0; i<=parentesis; ++i)
-                          fila1[i] = yytext[i];
-                        fila1[i] = '\0';
-
-                        // Escribimos primera fila
-                        for (int j=0; j<numIndex; ++j)
-                          escribirCadena("\t", 1);
-                        escribirCadena(fila1, parentesis+1);
-                        escribirCadena("\n", 1);
-
-                        while (yytext[i] == ' ' || yytext[i] == '\t') // Quitamos espacios
-                          ++i;
-
-                        i = i-1; // Primera letra de la segunda fila
-                        for(j=i; j<yyleng; ++j)
-                          fila2[j-i] = yytext[j];
-                        fila2[j] = '\0';
-
-                        // Escribimos segunda fila
-                        for (i=0; i<(numIndex+1); ++i)
-                          escribirCadena("\t", 1);
-                        escribirCadena(fila2, yyleng-i);
-                       }
-
-
 {tipomas}              {depurar("Tipo más"); // Añadimos una tabulación
                         escribir();
                         ++numIndex;
@@ -340,8 +314,10 @@ controlSinLinea        ({tipomas}{espacio}({parentesis}|{parentesisFor}){sentenc
 
 {tipomenos}            {depurar("Tipo menos"); // Quitamos una tabulación
                         --numIndex;
-                        if (anteriorLlave == false)
+                        if (anteriorLlave == false && (!insertadaLinea)){
                           escribirCadena("\n", 1);
+                          //printf("--");
+                          }
                         escribir();
                         escribirCadena("\n", 1);
 
@@ -359,7 +335,7 @@ controlSinLinea        ({tipomas}{espacio}({parentesis}|{parentesisFor}){sentenc
                           // Consecuencias
                           lineaProcesada = false;
                           inicioLinea    = true;
-                          insertadaLinea = false;
+                          insertadaLinea = true;
                           // Si pones anteriorLlave=false la variable no serviría de nada
                         }
                        }
@@ -371,10 +347,48 @@ controlSinLinea        ({tipomas}{espacio}({parentesis}|{parentesisFor}){sentenc
                        insertadaLinea = false;
                        anteriorLlave  = false;
                       }
+{controlSinLinea}      {depurar("Control sin línea"); // Ejemplo: if (condicion) noIntro();
+                        int parentesis = ultimoParentesisDerecho(), i=0,j=0, inicio=0;
+                        char fila1[yyleng], fila2[yyleng]; // Estructura de control
 
+                        if (parentesis == 0){ // sentencia else
+                          int index = 0;
+                          while (yytext[index] == ' ' || yytext[index] == '\t')
+                            ++index;
+                          parentesis = index+4; // else
+                        }
 
+                        while (yytext[i] == ' ' || yytext[i] == '\t')
+                          ++i;
+                        inicio = i;
+
+                        for (i; i<=parentesis; ++i)
+                          fila1[i-inicio] = yytext[i];
+                        //fila1[i] = '\0';
+
+                        for (int j=0; j<numIndex; ++j)  // Escribimos primera fila
+                          escribirCadena("\t", 1);
+                        escribirCadena(fila1, parentesis+1-inicio);
+                        escribirCadena("{\n", 2);
+
+                        while (yytext[i] == ' ' || yytext[i] == '\t') // Quitamos espacios
+                          ++i;
+                        i = i-1; // Primera letra de la segunda fila
+
+                        // Escribimos segunda fila
+                        for (int k=0; k<(numIndex+1); ++k)
+                          escribirCadena("\t", 1);
+
+                        for (int k=0; k<(yyleng-i); ++k)
+                          escribirCadena(yytext+i+k, 1);
+                        escribirCadena("\n}\n", 3);
+
+                        inicioLinea    = true;
+                        insertadaLinea = true;
+                        lineaProcesada = false;
+                        anteriorLlave  = false;
+                       }
 %%
-
 
   /*----- Sección de Procedimientos --------*/
 
@@ -399,3 +413,4 @@ int main (int argc, char *argv[]){
   yylex ();
   return 0;
 }
+

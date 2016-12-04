@@ -88,10 +88,10 @@ Lo ideal sería que todo el código estuviese bien tabulado, para facilitar esta
 
 \section{Declaraciones}
 Incluiremos algunas bibliotecas necesarias para el programa
-\lstinputlisting[language=C++, firstline=5, lastline=8]{./indentador.lex}
+\lstinputlisting[language=C++, firstline=4, lastline=8]{./src/indentador.lex}
 
 \subsection{Variables}
-\lstinputlisting[language=C++, firstline=12, lastline=19]{./indentador.lex}
+\lstinputlisting[language=C++, firstline=11, lastline=19]{./src/indentador.lex}
 
 \begin{itemize}
 	\item $numIndex$ es el número de tabulaciones necesarias en cada instante.
@@ -99,7 +99,7 @@ Incluiremos algunas bibliotecas necesarias para el programa
 	\item $inicioLinea$ nos dice si estamos en el inicio de una línea, es necesario para saber si tenemos que meter $numIndex$ $\backslash t$ o no.
 	\item $insertadaLinea$ nos dice si se ha impreso justo antes un $\backslash n$, es necesario ya que pueden darse situaciones en las que sea necesario insertar un $\backslash n$ manual, con esta variable nos aseguramos de no insertar varios saltos de línea redundantes.
 	\item $lineaProcesada$, tras un $\{$ que no sea texto siempre irá un salto de línea y un aumento de $numIndex$, salvo que ya hayamos encontrado una estructura de control y aumentado $numIndex$ anteriormente.
-	\item $anteriorLlave$ nos dice si el último carácter es una llave $\}$. Esto nos sirve para poner un salto de línea extra en estructuras de control largas pero que si aparecen varias llaves $\}$ seguidas no tengan líneas en blanco en medio.
+	\item $anteriorLlave$ nos dice si el último carácter es una llave $\}$. Esto nos sirve para poner un salto de línea extra en estructuras de control largas pero si aparecen varias llaves seguidas no tengan líneas en blanco en medio.
 	\item $salidaFichero$ nos indica si la salida por pantalla es por la salida estándar o no.
 \end{itemize}
 
@@ -145,28 +145,28 @@ Devuelve si hay algún comentario en $yytext$ y devuelve en $lineaComent$ el ini
 \end{lstlisting}
 Sentencia que nos indica la expresión regular por la que ha sido reconocido yytext.
 
-
+\
 
 
 \subsection{Expresiones regulares}
 \subsubsection{Texto}
-\lstinputlisting[firstline=119, lastline=123]{./indentador.lex}
+\lstinputlisting[firstline=119, lastline=123]{./src/indentador.lex}
 Expresiones rutinarias, quizá la más interesante sea $cadenaTexto$, ya que es necesario incluir la opción de incluir unas comillas dentro de una cadena de texto.
 
 \vspace{0.4cm}
 \subsubsection{Estructuras de control}
-\lstinputlisting[firstline=127, lastline=134]{./indentador.lex}
+\lstinputlisting[firstline=127, lastline=134]{./src/indentador.lex}
 $tipomas$ y $tipomenos$ son las que se utilizan en el programa, identifican los momentos en los que hay que aumentar o disminuir el número de tabulaciones.
 El resto son palabras reservadas que nos ayudan con la tabulación.
 
 \vspace{0.4cm}
 \subsubsection{Comentarios}
-\lstinputlisting[firstline=138, lastline=141]{./indentador.lex}
+\lstinputlisting[firstline=138, lastline=141]{./src/indentador.lex}
 $comentarioLargo$ es una expresión regular interesante.
 
 \vspace{0.4cm}
 \subsubsection{Separación con espacios}
-\lstinputlisting[firstline=145, lastline=155]{./indentador.lex}
+\lstinputlisting[firstline=145, lastline=155]{./src/indentador.lex}
 Las primeras son expresiones auxiliares, tienen comportamiento asociado los $5$ últimos.
 $espacioDoble$ y $espacioVacio$ identifica las sentencias que tienen obligatoriamente un espacio a cada lado o las que no deben tener ninguno y se traga los espacios a los lados para tener un formato homogéneo.
 Anteriormente también se creó $espacioIzquierda$ para intentar poner un espacio justo antes del paréntesis izquierdo en una estructura de control o llamando a una función, pero se optó por otra solución.
@@ -214,12 +214,19 @@ Para no tener que volver a pasar $yylex()$ en el mismo programa invocamos dos es
 
 
 \section{Procedimientos}
-\lstinputlisting[language=C, firstline=381, lastline=401]{./indentador.lex}
+\lstinputlisting[language=C, firstline=395, lastline=415]{./src/indentador.lex}
 
 
-%\section{Ejemplos}
+\section{Ejemplos}
+Veamos como se comporta el programa con ejemplos reales.
 
+\lstinputlisting[language=C, caption=Ejemplo1]{./Ejemplos/ejemplo1.txt}
+\lstinputlisting[language=C, caption=Ejemplo1Salida]{./Ejemplos/ejemplo1salida.txt}
 
+Probamos con un main
+
+\lstinputlisting[language=C, caption=Ejemplo2]{./Ejemplos/ejemplo2.txt}
+\lstinputlisting[language=C, caption=Ejemplo2Salida]{./Ejemplos/ejemplo2salida.txt}
 
 
 
