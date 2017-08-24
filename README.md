@@ -1,5 +1,8 @@
 # Indentador-C-Cpp
 Indentador automático de código C/C++
 
-## Ejecución
+# Ejecución
+
+``` bash
 ./bin.sh <archivo>
+```
